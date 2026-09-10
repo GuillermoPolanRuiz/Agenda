@@ -134,7 +134,7 @@ let settings = {
 
     precio_km: 0.50,
 
-    precio_persona: 2,
+    precio_persona: 1,
 
     precio_hora: 50,
 
@@ -1982,35 +1982,76 @@ async function saveEvent(
     }
 
 
-    const eventData = {
+    // ==========================================
+// USUARIO AUTENTICADO
+// ==========================================
 
-        fecha:
-            formatDateForDatabase(
-                selectedDate
-            ),
+const {
+    data: {
+        user
+    },
+    error: userError
+} = await supabaseClient.auth.getUser();
 
-        nombre:
-            document.getElementById(
-                "eventName"
-            ).value.trim(),
 
-        lugar:
-            document.getElementById(
-                "eventPlace"
-            ).value.trim(),
+if (
+    userError ||
+    !user
+) {
 
-        tipo:
-            document.getElementById(
-                "eventType"
-            ).value,
+    console.error(
+        "No se ha podido obtener el usuario:",
+        userError
+    );
 
-        hora_inicio:
-            start,
+    alert(
+        "Tu sesión ha caducado. Vuelve a iniciar sesión."
+    );
 
-        hora_fin:
-            end
+    window.location.href =
+        "login.html";
 
-    };
+    return;
+
+}
+
+
+// ==========================================
+// DATOS DEL EVENTO
+// ==========================================
+
+const eventData = {
+
+    user_id:
+        user.id,
+
+    fecha:
+        formatDateForDatabase(
+            selectedDate
+        ),
+
+    nombre:
+        document.getElementById(
+            "eventName"
+        ).value.trim(),
+
+    lugar:
+        document.getElementById(
+            "eventPlace"
+        ).value.trim(),
+
+    tipo:
+        document.getElementById(
+            "eventType"
+        ).value,
+
+    hora_inicio:
+        start,
+
+    hora_fin:
+        end
+
+};
 
 
     const {
@@ -2756,17 +2797,12 @@ function calculateBudgetTotal(
         );
 
 
-    if (
-        settings.cobrar_por_hora
-    ) {
-
-        total +=
-            duration *
-            Number(
-                settings.precio_hora
-            );
-
-    }
+    // Precio por hora
+    total +=
+        duration *
+        Number(
+            settings.precio_hora
+        );
 
 
     return total;
