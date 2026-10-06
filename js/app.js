@@ -136,7 +136,7 @@ let settings = {
 
     precio_km: 0.50,
 
-    precio_persona: 1,
+    precio_persona: 2,
 
     precio_hora: 50,
 
@@ -2095,11 +2095,8 @@ async function saveEvent(
     }
 
 
-    // ==========================================
-// USUARIO AUTENTICADO
-// ==========================================
+    const eventData = {
 
-<<<<<<< HEAD
         user_id:
             currentUserId,
 
@@ -2107,74 +2104,29 @@ async function saveEvent(
             formatDateForDatabase(
                 selectedDate
             ),
-=======
-const {
-    data: {
-        user
-    },
-    error: userError
-} = await supabaseClient.auth.getUser();
->>>>>>> 01a873b66b028bf9e19a3eccf8777e4f49e716e9
 
+        nombre:
+            document.getElementById(
+                "eventName"
+            ).value.trim(),
 
-if (
-    userError ||
-    !user
-) {
+        lugar:
+            document.getElementById(
+                "eventPlace"
+            ).value.trim(),
 
-    console.error(
-        "No se ha podido obtener el usuario:",
-        userError
-    );
+        tipo:
+            document.getElementById(
+                "eventType"
+            ).value,
 
-    alert(
-        "Tu sesión ha caducado. Vuelve a iniciar sesión."
-    );
+        hora_inicio:
+            start,
 
-    window.location.href =
-        "login.html";
+        hora_fin:
+            end
 
-    return;
-
-}
-
-
-// ==========================================
-// DATOS DEL EVENTO
-// ==========================================
-
-const eventData = {
-
-    user_id:
-        user.id,
-
-    fecha:
-        formatDateForDatabase(
-            selectedDate
-        ),
-
-    nombre:
-        document.getElementById(
-            "eventName"
-        ).value.trim(),
-
-    lugar:
-        document.getElementById(
-            "eventPlace"
-        ).value.trim(),
-
-    tipo:
-        document.getElementById(
-            "eventType"
-        ).value,
-
-    hora_inicio:
-        start,
-
-    hora_fin:
-        end
-
-};
+    };
 
 
     const {
@@ -2970,12 +2922,17 @@ function calculateBudgetTotal(
         );
 
 
-    // Precio por hora
-    total +=
-        duration *
-        Number(
-            settings.precio_hora
-        );
+    if (
+        settings.cobrar_por_hora
+    ) {
+
+        total +=
+            duration *
+            Number(
+                settings.precio_hora
+            );
+
+    }
 
 
     // --------------------------------------
