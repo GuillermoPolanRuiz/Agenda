@@ -1091,6 +1091,19 @@ body {
 }
 
 
+.budget-holiday-toggle {
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 14px 16px;
+
+    margin-bottom: 18px;
+
+}
+
+
 .setting-description {
 
     display: flex;
