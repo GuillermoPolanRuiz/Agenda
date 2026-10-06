@@ -123,6 +123,8 @@ let selectedEvent = null;
 
 let events = [];
 
+let currentUserId = null;
+
 
 // ==========================================
 // CONFIGURACIÓN
@@ -138,9 +140,67 @@ let settings = {
 
     precio_hora: 50,
 
-    cobrar_por_hora: false
+    cobrar_por_hora: false,
+
+    recargo_festivo: 20,
+
+    precio_base_empresarial: 300
 
 };
+
+
+// ==========================================
+// PRECIO BASE SEGÚN TIPO DE EVENTO
+// ==========================================
+// Boda, Cumpleaños y Comunión tienen un precio
+// base fijo de 180€. Empresarial usa su propio
+// precio editable en Configuración. El resto
+// (Fiesta, Otro evento) usa el precio base
+// general de Configuración.
+
+const PRECIO_BASE_FIJO_POR_TIPO = {
+
+    "Boda": 180,
+
+    "Cumpleaños": 180,
+
+    "Comunion": 180
+
+};
+
+
+function getPrecioBase(
+    tipo
+) {
+
+    if (
+        tipo === "Empresarial"
+    ) {
+
+        return Number(
+            settings.precio_base_empresarial
+        );
+
+    }
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            PRECIO_BASE_FIJO_POR_TIPO,
+            tipo
+        )
+    ) {
+
+        return PRECIO_BASE_FIJO_POR_TIPO[tipo];
+
+    }
+
+
+    return Number(
+        settings.precio_base
+    );
+
+}
 
 
 // ==========================================
@@ -201,6 +261,10 @@ async function checkAuth() {
         return null;
 
     }
+
+
+    currentUserId =
+        session.user.id;
 
 
     return session;
@@ -583,6 +647,18 @@ function updateSettingsForm() {
     ).checked =
         settings.cobrar_por_hora;
 
+
+    document.getElementById(
+        "settingHolidaySurcharge"
+    ).value =
+        settings.recargo_festivo;
+
+
+    document.getElementById(
+        "settingBaseEmpresarial"
+    ).value =
+        settings.precio_base_empresarial;
+
 }
 
 
@@ -631,6 +707,20 @@ async function saveSettings(
             document.getElementById(
                 "settingChargeHour"
             ).checked,
+
+        recargo_festivo:
+            parseFloat(
+                document.getElementById(
+                    "settingHolidaySurcharge"
+                ).value
+            ),
+
+        precio_base_empresarial:
+            parseFloat(
+                document.getElementById(
+                    "settingBaseEmpresarial"
+                ).value
+            ),
 
         updated_at:
             new Date().toISOString()
@@ -1684,6 +1774,25 @@ function createBudgetSummary(
             </div>
 
 
+            ${
+                budget.dia_festivo
+                    ? `
+                        <div class="budget-row">
+
+                            <span>
+                                Recargo día festivo
+                            </span>
+
+                            <strong>
+                                +${budget.recargo_festivo_porcentaje ?? settings.recargo_festivo}%
+                            </strong>
+
+                        </div>
+                      `
+                    : ""
+            }
+
+
             <div class="budget-row total">
 
                 <span>
@@ -1854,6 +1963,10 @@ function showNewEventForm() {
                         Fiesta
                     </option>
 
+                    <option value="Empresarial">
+                        Empresarial
+                    </option>
+
                     <option value="Otro evento">
                         Otro evento
                     </option>
@@ -1986,12 +2099,22 @@ async function saveEvent(
 // USUARIO AUTENTICADO
 // ==========================================
 
+<<<<<<< HEAD
+        user_id:
+            currentUserId,
+
+        fecha:
+            formatDateForDatabase(
+                selectedDate
+            ),
+=======
 const {
     data: {
         user
     },
     error: userError
 } = await supabaseClient.auth.getUser();
+>>>>>>> 01a873b66b028bf9e19a3eccf8777e4f49e716e9
 
 
 if (
@@ -2585,11 +2708,14 @@ async function showBudgetForm(
 
                 <span>
                     Precio base
+                    (${escapeHtml(event.tipo)})
                 </span>
 
                 <strong>
                     ${formatMoney(
-                        settings.precio_base
+                        getPrecioBase(
+                            event.tipo
+                        )
                     )}
                 </strong>
 
@@ -2693,6 +2819,43 @@ async function showBudgetForm(
             </div>
 
 
+            <div class="setting-item budget-holiday-toggle">
+
+                <div class="setting-description">
+
+                    <strong>
+                        Día festivo especial
+                    </strong>
+
+                    <span>
+                        Navidad, Nochevieja y similares.
+                        Añade un
+                        ${settings.recargo_festivo}%
+                        sobre el precio total.
+                    </span>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="budgetHoliday"
+                        ${
+                            budget?.dia_festivo
+                                ? "checked"
+                                : ""
+                        }
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
             <div class="calculated-price">
 
                 <span
@@ -2762,6 +2925,14 @@ async function showBudgetForm(
     );
 
 
+    document
+        .getElementById("budgetHoliday")
+        .addEventListener(
+            "change",
+            updateCalculatedPrice
+        );
+
+
     updateCalculatedPrice();
 
 }
@@ -2774,12 +2945,14 @@ async function showBudgetForm(
 function calculateBudgetTotal(
     km,
     people,
-    duration
+    duration,
+    eventType,
+    isHoliday
 ) {
 
     let total =
-        Number(
-            settings.precio_base
+        getPrecioBase(
+            eventType
         );
 
 
@@ -2803,6 +2976,24 @@ function calculateBudgetTotal(
         Number(
             settings.precio_hora
         );
+
+
+    // --------------------------------------
+    // RECARGO DÍA FESTIVO ESPECIAL
+    // (% sobre el precio total)
+    // --------------------------------------
+
+    if (isHoliday) {
+
+        total +=
+            total *
+            (
+                Number(
+                    settings.recargo_festivo
+                ) / 100
+            );
+
+    }
 
 
     return total;
@@ -2840,11 +3031,19 @@ function updateCalculatedPrice() {
         ) || 0;
 
 
+    const isHoliday =
+        document.getElementById(
+            "budgetHoliday"
+        ).checked;
+
+
     const total =
         calculateBudgetTotal(
             km,
             people,
-            duration
+            duration,
+            selectedEvent?.tipo,
+            isHoliday
         );
 
 
@@ -2902,11 +3101,19 @@ async function saveBudget(
         );
 
 
+    const isHoliday =
+        document.getElementById(
+            "budgetHoliday"
+        ).checked;
+
+
     const precioTotal =
         calculateBudgetTotal(
             km,
             people,
-            duration
+            duration,
+            selectedEvent?.tipo,
+            isHoliday
         );
 
 
@@ -2916,9 +3123,19 @@ async function saveBudget(
             eventId,
 
         precio_base:
-            Number(
-                settings.precio_base
+            getPrecioBase(
+                selectedEvent?.tipo
             ),
+
+        dia_festivo:
+            isHoliday,
+
+        recargo_festivo_porcentaje:
+            isHoliday
+                ? Number(
+                    settings.recargo_festivo
+                )
+                : 0,
 
         km:
             km,
@@ -3028,6 +3245,7 @@ function createTypeOptions(
         "Comunion",
         "Cumpleaños",
         "Fiesta",
+        "Empresarial",
         "Otro evento"
 
     ];
