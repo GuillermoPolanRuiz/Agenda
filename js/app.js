@@ -3590,6 +3590,34 @@ async function showSettingsView() {
 // ==========================================
 async function downloadBudget(eventId) {
 
+    const loadingWindow = window.open(
+        "",
+        "_blank"
+    );
+
+    loadingWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="utf-8">
+    <title>Generando PDF</title>
+    <style>
+    body{
+        font-family: Arial;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        margin:0;
+    }
+    </style>
+    </head>
+    <body>
+    <h2>📄 Generando presupuesto...</h2>
+    </body>
+    </html>
+    `);
+
     const event =
         events.find(
             item => item.id_evento === eventId
@@ -3633,11 +3661,56 @@ async function downloadBudget(eventId) {
             Precio: formatMoney(budget.precio_total)
         });
 
-    window.open(
-        "https://script.google.com/macros/s/AKfycbzGYsJV4khxah9CSv6XfL-dp0dZDBL69CoQC-PAjoZ4g60uaJOp8iKwZ0ZMdngFb1vo/exec?" +
-        params.toString(),
-        "_blank"
-    );
+    const SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbzajHU48yOkjYBn-oISchPtL5bqaM5miOdrU0w8LaP7AEGfUt7pwOmCmfJYRXFgR6we/exec";
+
+    const response =
+        await fetch(
+            SCRIPT_URL + "?" + params.toString()
+        );
+
+    const result =
+        await response.json();
+
+    const binary =
+        atob(result.pdf);
+
+    const bytes =
+        new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] =
+            binary.charCodeAt(i);
+    }
+
+    const blob =
+        new Blob(
+            [bytes],
+            {
+                type: "application/pdf"
+            }
+        );
+
+    
+    const url =
+        URL.createObjectURL(blob);
+
+    loadingWindow.location.href =
+        url;
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+    link.download = result.filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(url);
 }
 
 function getCurrentDate() {
