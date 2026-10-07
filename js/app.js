@@ -1807,15 +1807,31 @@ function createBudgetSummary(
             }
 
 
-            <div class="budget-row total">
+            <div class="budget-row">
 
                 <span>
-                    TOTAL
+                    Precio calculado
                 </span>
 
                 <strong>
                     ${formatMoney(
                         budget.precio_total
+                    )}
+                </strong>
+
+            </div>
+
+            <div class="budget-row total">
+
+                <span>
+                    Precio final
+                </span>
+
+                <strong>
+                    ${formatMoney(
+                        roundPrice(
+                            budget.precio_total
+                        )
                     )}
                 </strong>
 
@@ -3468,7 +3484,9 @@ function formatMoney(
         "es-ES",
         {
             style: "currency",
-            currency: "EUR"
+            currency: "EUR",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         }
     ).format(
         Number(value) || 0
@@ -3658,7 +3676,12 @@ async function downloadBudget(eventId) {
             DuracionH: duracionH,
             DuracionMin: duracionMin,
             NInvitados: budget.num_personas,
-            Precio: formatMoney(budget.precio_total)
+            Precio:
+                formatMoney(
+                    roundPrice(
+                        budget.precio_total
+                )
+            )
         });
 
     const SCRIPT_URL =
@@ -3730,6 +3753,15 @@ function getCurrentDate() {
 
     return `${day}/${month}/${year}`;
 }
+
+function roundPrice(value) {
+
+    return Math.round(
+        Number(value) / 10
+    ) * 10;
+
+}
+``
 
 
 // ==========================================
