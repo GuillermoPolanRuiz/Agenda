@@ -3634,7 +3634,7 @@ async function downloadBudget(eventId) {
         });
 
     window.open(
-        "https://script.google.com/macros/s/AKfycbyAeKkh5uOCpXhcnUkzJB-et7OmacS6o-vlvDflbGf9Y6hzkZHBN-aRItVmYkxC0YSe/exec?" +
+        "https://script.google.com/macros/s/AKfycbxmZ_mJzEzutz1Sa9WcLMBJazZ2e_XBZbnMt8mU7I-wKeBcquF7q1qt0XR9umb5M6ih/exec?" +
         params.toString(),
         "_blank"
     );
