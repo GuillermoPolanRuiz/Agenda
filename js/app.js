@@ -1633,16 +1633,30 @@ async function showEventDetail(
             </button>
 
 
+            ${
+                budget
+                    ? `
+                        <button
+                            class="button success"
+                            type="button"
+                            onclick="downloadBudget('${event.id_evento}')"
+                        >
+                            📄 Descargar PDF
+                        </button>
+                    `
+                    : ""
+            }
+
             <button
                 class="button primary"
                 type="button"
                 onclick="showBudgetForm('${event.id_evento}')"
             >
-                ${
-                    budget
-                        ? "Editar presupuesto"
-                        : "+ Crear presupuesto"
-                }
+            ${
+                budget
+                    ? "Editar presupuesto"
+                    : "+ Crear presupuesto"
+            }
             </button>
 
         </div>
@@ -3568,6 +3582,80 @@ async function showSettingsView() {
 
     await loadSettings();
 
+}
+
+
+// ==========================================
+// DESCARGAR PRESUPUESTO PDF
+// ==========================================
+async function downloadBudget(eventId) {
+
+    const event =
+        events.find(
+            item => item.id_evento === eventId
+        );
+
+    if (!event) {
+        alert("No se ha encontrado el evento");
+        return;
+    }
+
+    const budget =
+        await getBudgetForEvent(eventId);
+
+    if (!budget) {
+        alert("El evento no tiene presupuesto");
+        return;
+    }
+
+    const durationMinutes =
+        Math.round(
+            Number(budget.duracion || 0) * 60
+        );
+
+    const duracionH =
+        Math.floor(durationMinutes / 60);
+
+    const duracionMin =
+        durationMinutes % 60;
+
+    const params =
+        new URLSearchParams({
+            NombreEvento: event.nombre,
+            FechaActual: getCurrentDate(),
+            Lugar: event.lugar || "",
+            Fecha: formatDateFromDatabase(event.fecha),
+            HoraInicio: formatTime(event.hora_inicio),
+            HoraFin: formatTime(event.hora_fin),
+            DuracionH: duracionH,
+            DuracionMin: duracionMin,
+            NInvitados: budget.num_personas,
+            Precio: formatMoney(budget.precio_total)
+        });
+
+    window.open(
+        "https://script.google.com/macros/s/AKfycbyAeKkh5uOCpXhcnUkzJB-et7OmacS6o-vlvDflbGf9Y6hzkZHBN-aRItVmYkxC0YSe/exec?" +
+        params.toString(),
+        "_blank"
+    );
+}
+
+function getCurrentDate() {
+
+    const today = new Date();
+
+    const day =
+        String(today.getDate())
+            .padStart(2, "0");
+
+    const month =
+        String(today.getMonth() + 1)
+            .padStart(2, "0");
+
+    const year =
+        today.getFullYear();
+
+    return `${day}/${month}/${year}`;
 }
 
 
