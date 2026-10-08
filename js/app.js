@@ -3027,6 +3027,63 @@ async function showBudgetForm(
 
             </div>
 
+            <div class="form-group">
+
+                <label for="budgetDiscount">
+                    Descuento
+                </label>
+
+                <select id="budgetDiscount">
+
+                <option value="0"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 0 ? "selected" : ""}>
+                    Sin descuento
+                </option>
+
+                <option value="5"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 5 ? "selected" : ""}>
+                    5%
+                </option>
+
+                <option value="10"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 10 ? "selected" : ""}>
+                    10%
+                </option>
+
+                <option value="15"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 15 ? "selected" : ""}>
+                    15%
+                </option>
+
+                <option value="20"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 20 ? "selected" : ""}>
+                    20%
+                </option>
+
+                <option value="25"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 25 ? "selected" : ""}>
+                    25%
+                </option>
+
+                <option value="30"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 30 ? "selected" : ""}>
+                    30%
+                </option>
+
+                <option value="40"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 40 ? "selected" : ""}>
+                    40%
+                </option>
+
+                <option value="50"
+                    ${Number(budget?.descuento_porcentaje ?? 0) === 50 ? "selected" : ""}>
+                    50%
+                </option>
+
+            </select>
+
+            </div>
+
 
             <div class="calculated-price">
 
@@ -3082,7 +3139,8 @@ async function showBudgetForm(
     [
         "budgetKm",
         "budgetPeople",
-        "budgetDuration"
+        "budgetDuration",
+        "budgetDiscount"
     ].forEach(
         id => {
 
@@ -3092,7 +3150,12 @@ async function showBudgetForm(
                     "input",
                     updateCalculatedPrice
                 );
-
+            document
+                .getElementById(id)
+                .addEventListener(
+                    "change",
+                    updateCalculatedPrice
+                );
         }
     );
 
@@ -3119,7 +3182,8 @@ function calculateBudgetTotal(
     people,
     duration,
     eventType,
-    isHoliday
+    isHoliday,
+    discountPercentage
 ) {
 
     let total =
@@ -3172,6 +3236,19 @@ function calculateBudgetTotal(
 
     }
 
+    // --------------------------------------
+    // DESCUENTO
+    // --------------------------------------
+
+    if (discountPercentage > 0) {
+
+        total -=
+            total *
+            (
+                Number(discountPercentage) / 100
+            );
+
+    }
 
     return total;
 
@@ -3213,6 +3290,12 @@ function updateCalculatedPrice() {
             "budgetHoliday"
         ).checked;
 
+    const discountPercentage =
+        parseFloat(
+            document.getElementById(
+                "budgetDiscount"
+            ).value
+        ) || 0;
 
     const total =
         calculateBudgetTotal(
@@ -3220,7 +3303,8 @@ function updateCalculatedPrice() {
             people,
             duration,
             selectedEvent?.tipo,
-            isHoliday
+            isHoliday,
+            discountPercentage
         );
 
 
@@ -3283,6 +3367,12 @@ async function saveBudget(
             "budgetHoliday"
         ).checked;
 
+    const discountPercentage =
+        parseFloat(
+            document.getElementById(
+                "budgetDiscount"
+            ).value
+        ) || 0;
 
     const precioTotal =
         calculateBudgetTotal(
@@ -3290,7 +3380,8 @@ async function saveBudget(
             people,
             duration,
             selectedEvent?.tipo,
-            isHoliday
+            isHoliday,
+            discountPercentage
         );
 
 
@@ -3314,6 +3405,8 @@ async function saveBudget(
                 )
                 : 0,
 
+        descuento_porcentaje:
+            discountPercentage,
         km:
             km,
 
