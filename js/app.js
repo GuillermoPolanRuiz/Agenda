@@ -1411,12 +1411,8 @@ function showEventsForDay(
 // TARJETA EVENTO
 // ==========================================
 
-function createEventCard(
-    event
-) {
-
+function createEventCard(event) {
     return `
-
         <div
             class="event-card"
             onclick="showEventDetail('${event.id_evento}')"
@@ -1424,21 +1420,16 @@ function createEventCard(
 
             <div class="event-card-header">
 
-                <div class="event-card-name">
+                <div class="event-card-title">
 
-                    ${escapeHtml(
-                        event.nombre
-                    )}
+                    <div class="event-card-name">
+                        ${escapeHtml(event.nombre)}
+                    </div>
 
                 </div>
 
-
                 <span class="event-card-type">
-
-                    ${escapeHtml(
-                        event.tipo
-                    )}
-
+                    ${escapeHtml(event.tipo)}
                 </span>
 
             </div>
@@ -1447,17 +1438,42 @@ function createEventCard(
             <div class="event-card-info">
 
                 <div>
-
                     🕐
-                    ${formatTime(
-                        event.hora_inicio
-                    )}
+                    ${formatTime(event.hora_inicio)}
                     -
-                    ${formatTime(
-                        event.hora_fin
-                    )}
-
+                    ${formatTime(event.hora_fin)}
                 </div>
+
+
+                ${
+                    event.telefono
+                        ? `
+                            <div class="event-card-phone">
+
+                                📞
+                                <span class="phone-number">
+                                    ${escapeHtml(event.telefono)}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    class="copy-phone-button"
+                                    onclick="copyPhone(event, '${escapeAttribute(event.telefono)}')"
+                                    title="Copiar teléfono"
+                                >
+                                    📋 Copiar
+                                </button>
+
+                                <span
+                                    class="copy-success-message"
+                                >
+                                    ✓ Copiado
+                                </span>
+
+                            </div>
+                          `
+                        : ""
+                }
 
 
                 ${
@@ -1465,9 +1481,7 @@ function createEventCard(
                         ? `
                             <div>
                                 📍
-                                ${escapeHtml(
-                                    event.lugar
-                                )}
+                                ${escapeHtml(event.lugar)}
                             </div>
                           `
                         : ""
@@ -1476,9 +1490,146 @@ function createEventCard(
             </div>
 
         </div>
-
     `;
+}
 
+function copyPhone(
+    clickEvent,
+    phone
+) {
+
+    clickEvent.stopPropagation();
+
+
+    // Método moderno
+    if (
+        navigator.clipboard &&
+        window.isSecureContext
+    ) {
+
+        navigator.clipboard
+            .writeText(phone)
+
+            .then(() => {
+
+                showCopySuccess(
+                    clickEvent.currentTarget
+                );
+
+            })
+
+            .catch(() => {
+
+                copyPhoneFallback(
+                    phone,
+                    clickEvent.currentTarget
+                );
+
+            });
+
+        return;
+
+    }
+
+
+    // Método alternativo
+    copyPhoneFallback(
+        phone,
+        clickEvent.currentTarget
+    );
+
+}
+
+function copyPhoneFallback(
+    phone,
+    button
+) {
+
+    const textarea =
+        document.createElement(
+            "textarea"
+        );
+
+    textarea.value =
+        phone;
+
+    textarea.style.position =
+        "fixed";
+
+    textarea.style.left =
+        "-9999px";
+
+    textarea.style.top =
+        "0";
+
+    document.body.appendChild(
+        textarea
+    );
+
+    textarea.focus();
+
+    textarea.select();
+
+
+    try {
+
+        const successful =
+            document.execCommand(
+                "copy"
+            );
+
+
+        document.body.removeChild(
+            textarea
+        );
+
+
+        if (successful) {
+
+            showCopySuccess(
+                button
+            );
+
+        } else {
+
+            alert(
+                "No se ha podido copiar el teléfono."
+            );
+
+        }
+
+    } catch (error) {
+
+        document.body.removeChild(
+            textarea
+        );
+
+        alert(
+            "No se ha podido copiar el teléfono."
+        );
+
+    }
+
+}
+
+function showCopySuccess(button) {
+
+    const successMessage =
+        button.parentElement.querySelector(
+            ".copy-success-message"
+        );
+
+    if (!successMessage) {
+        return;
+    }
+
+    successMessage.classList.add("show");
+
+    setTimeout(() => {
+
+        successMessage.classList.remove("show");
+
+    }, 1500);
 }
 
 
@@ -1961,6 +2112,19 @@ function showNewEventForm() {
 
             </div>
 
+            <div class="form-group">
+
+                <label for="eventPhone">
+                    Teléfono
+                </label>
+
+                <input
+                    type="tel"
+                    id="eventPhone"
+                    placeholder="Ej. 600 123 456"
+                >
+
+            </div>
 
             <div class="form-group">
 
@@ -2145,6 +2309,11 @@ async function saveEvent(
                 "eventPlace"
             ).value.trim(),
 
+        telefono:
+            document.getElementById(
+                "eventPhone"
+            ).value.trim(),
+
         tipo:
             document.getElementById(
                 "eventType"
@@ -2285,6 +2454,22 @@ function showEditEventForm() {
 
             </div>
 
+            <div class="form-group">
+
+                <label for="eventPhone">
+                    Teléfono
+                </label>
+
+                <input
+                    type="tel"
+                    id="eventPhone"
+                    value="${escapeAttribute(
+                        event.telefono || ""
+                    )}"
+                    placeholder="Ej. 600 123 456"
+                >
+
+            </div>
 
             <div class="form-group">
 
@@ -2433,6 +2618,11 @@ async function updateEvent(
                 "eventPlace"
             ).value.trim(),
 
+        telefono:
+            document.getElementById(
+                "eventPhone"
+            ).value.trim(),
+        
         tipo:
             document.getElementById(
                 "eventType"
